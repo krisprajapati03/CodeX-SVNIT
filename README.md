@@ -9,3 +9,13 @@ This hackathon invites participants to develop innovative solutions for:
 - Citizen-friendly platforms
 
 The goal is to create scalable, secure, and inclusive e-governance systems that enhance public trust and efficiency in digital government services. Let’s build a smarter future!
+
+
+## Contributors
+
+This project is maintained by [KRIS PRAJAPATI](https://github.com/krisprajapati03).  
+Special thanks to all contributors!  
+
+<a href="https://github.com/krisprajapati03/CodeX-SVNIT/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=krisprajapati03/CodeX-SVNIT" />
+</a>
