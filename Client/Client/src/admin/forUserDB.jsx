@@ -1,10 +1,6 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 
-const ForUserDB = () => {
-
-  const navigate = useNavigate();
-
+const forUserDB = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-neutral-100 p-6">
       {/* Stats Cards */}
@@ -125,7 +121,7 @@ const ForUserDB = () => {
       </div>
 
       {/* Quick Actions Grid */}
-      <div onClick={()=>{navigate('/admin/documents')}} className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl">
         <div className="bg-white p-6 rounded-lg border border-neutral-200/20">
           <h3 className="text-lg font-medium text-neutral-900 mb-4">Document Verification</h3>
           <p className="text-neutral-600 mb-4">Verify and validate submitted documents</p>
@@ -148,4 +144,4 @@ const ForUserDB = () => {
   );
 };
 
-export default ForUserDB;
+export default forUserDB;
