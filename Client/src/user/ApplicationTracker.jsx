@@ -1,42 +1,20 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 
 const ApplicationTracker = () => {
   const [applicationId, setApplicationId] = useState(''); // Holds the application ID
   const [status, setStatus] = useState(null); // Holds the status of the application
   const [error, setError] = useState(null); // Holds error message if the application ID is not found
 
-  // Mock database of application statuses
-  const applicationsDb = [
-    {
-      id: 'APP-2024-001',
-      status: 'In Progress',
-      stages: [
-        { stage: 'Application Submitted', date: 'January 20, 2024 - 10:30 AM' },
-        { stage: 'Document Verification', date: 'January 21, 2024 - 2:15 PM' },
-        { stage: 'Under Review', date: 'January 22, 2024 - 3:00 PM' },
-        { stage: 'Final Approval', date: 'Pending' },
-      ],
-      additionalInfo: {
-        expectedCompletion: 'January 25, 2024',
-        department: 'Municipal Corporation',
-      },
-    },
-    // Add other applications if needed
-  ];
-
   // Function to handle the form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Check if the application ID exists in the mock database
-    const application = applicationsDb.find(
-      (app) => app.id === applicationId
-    );
-
-    if (application) {
-      setStatus(application);
+    try {
+      const response = await axios.get(`http://127.0.0.1:3000/api/v1/application/${applicationId}`);
+      setStatus(response.data);
       setError(null); // Reset error if found
-    } else {
+    } catch (err) {
       setError('Application ID not found');
       setStatus(null); // Reset status if not found
     }

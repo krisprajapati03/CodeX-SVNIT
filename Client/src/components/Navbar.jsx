@@ -1,8 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const Navbar = () => {
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+
     const handleLoginClick = () => {
+        // Simulate login
+        setIsLoggedIn(true);
         window.location.href = '/Login';
+    };
+
+    const handleProfileClick = () => {
+        window.location.href = '/user/profile-settings';
     };
 
     const handleHomeClick = () => {
@@ -18,7 +26,7 @@ const Navbar = () => {
     };
 
     const handleAboutClick = () => {
-        window.location.href = '/';
+        window.location.href = '/aboutus';
     };
 
     return (
@@ -39,7 +47,16 @@ const Navbar = () => {
                             <button onClick={handleContactClick} className="hover:text-orange-600">Contact</button>
                             <button onClick={handleServicesClick} className="hover:text-orange-600">Services</button>
                             <button onClick={handleAboutClick} className="hover:text-orange-600">About</button>
-                            <button onClick={handleLoginClick} className="bg-gov-orange px-4 py-2 rounded-md hover:bg-orange-600">Login</button>
+                            {isLoggedIn ? (
+                                <img
+                                    src="https://via.placeholder.com/40"
+                                    alt="User Profile"
+                                    className="h-10 w-10 rounded-full cursor-pointer"
+                                    onClick={handleProfileClick}
+                                />
+                            ) : (
+                                <button onClick={handleLoginClick} className="bg-gov-orange px-4 py-2 rounded-md hover:bg-orange-600">Login</button>
+                            )}
                         </div>
                     </div>
                 </div>

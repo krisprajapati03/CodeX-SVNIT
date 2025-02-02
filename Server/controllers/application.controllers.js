@@ -2,17 +2,54 @@ const Application = require("../models/application.models");
 const axios = require("axios");
 const fs = require("fs");
 const FormData = require("form-data");
-const Admin = require("../models/admin.models");
+const multer = require('multer');
+const path = require('path');
+const Gov = require("../models/gov.models");
+const Citizen = require("../models/citizen.models");
+
 
 // Pinata API keys (Use .env for security)
+// const PINATA_API_KEY = "4f190cdac2fb339ad2b7";
+// const PINATA_SECRET_API_KEY = "1cb30396f6964b073f22c0e5e938e6243ae2fc4dc5ccc5a69711b1129bd79f29";
+
+// Function to upload a file to Pinata
+// const uploadToPinata = async (filePath, originalName) => {
+//     const url = "https://api.pinata.cloud/pinning/pinFileToIPFS";
+
+//     const formData = new FormData();
+//     formData.append("file", fs.createReadStream(filePath));
+
+//     try {
+//         const response = await axios.post(url, formData, {
+//             headers: {
+//                 "Content-Type": `multipart/form-data; boundary=${formData._boundary}`,
+//                 pinata_api_key: PINATA_API_KEY,
+//                 pinata_secret_api_key: PINATA_SECRET_API_KEY,
+//             },
+//         });
+
+//         const cid = response.data.IpfsHash;
+//         const ipfsUrl = `https://gateway.pinata.cloud/ipfs/${cid}`;
+
+//         // Clean up uploaded file
+//         fs.unlinkSync(filePath);
+
+//         return { name: originalName, cid, url: ipfsUrl };
+//     } catch (error) {
+//         console.error("Error uploading to Pinata:", error.message);
+//         throw error;
+//     }
+// };
+
+// Pinata configuration
 const PINATA_API_KEY = "4f190cdac2fb339ad2b7";
 const PINATA_SECRET_API_KEY = "1cb30396f6964b073f22c0e5e938e6243ae2fc4dc5ccc5a69711b1129bd79f29";
 
 // Function to upload a file to Pinata
 const uploadToPinata = async (filePath, originalName) => {
     const url = "https://api.pinata.cloud/pinning/pinFileToIPFS";
-
     const formData = new FormData();
+    
     formData.append("file", fs.createReadStream(filePath));
 
     try {
@@ -22,6 +59,7 @@ const uploadToPinata = async (filePath, originalName) => {
                 pinata_api_key: PINATA_API_KEY,
                 pinata_secret_api_key: PINATA_SECRET_API_KEY,
             },
+            maxBodyLength: Infinity,
         });
 
         const cid = response.data.IpfsHash;
@@ -32,51 +70,118 @@ const uploadToPinata = async (filePath, originalName) => {
 
         return { name: originalName, cid, url: ipfsUrl };
     } catch (error) {
-        console.error("Error uploading to Pinata:", error.message);
+        console.error("Error uploading to Pinata:", error);
+        // Clean up file if upload fails
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
         throw error;
     }
 };
 
-// Create and Save a new Application with document uploads
 exports.create = async (req, res) => {
     try {
-        // Validate request
-        if (!req.body || !req.body.title || !req.body.description || !req.body.citizen) {
-            return res.status(400).json({ message: "Title, description, and citizen ID are required!" });
+        // Extract all required fields from request body
+        const {
+            title,
+            description,
+            data,
+            citizen, // This should be an email
+            fullName,
+            mobile,
+            email,
+            applicationType
+        } = req.body;
+
+        // Validate all required fields
+        const requiredFields = [
+            'title',
+            'description',
+            'data',
+            'citizen',
+            'fullName',
+            'mobile',
+            'email',
+            'applicationType'
+        ];
+
+        const missingFields = requiredFields.filter(field => !req.body[field]);
+        
+        if (missingFields.length > 0) {
+            return res.status(400).json({
+                message: "Missing required fields!",
+                missingFields
+            });
         }
 
-        const { title, description, data, citizen, gov, govorg, status } = req.body;
+        // Find citizen based on email
+        let citizen_ = await Citizen.findOne({ email: citizen });
+        
+        if (!citizen_) {
+            return res.status(404).json({
+                message: "Citizen not found! Please register first."
+            });
+        }
 
         // Handle document uploads
         let uploadedDocuments = [];
         if (req.files && req.files.length > 0) {
+            // Upload each file to Pinata
             uploadedDocuments = await Promise.all(
                 req.files.map(async (file) => {
-                    return await uploadToPinata(file.path, file.originalname);
+                    try {
+                        return await uploadToPinata(file.path, file.originalname);
+                    } catch (error) {
+                        console.error(`File upload failed: ${file.originalname}`, error);
+                        return { error: "Upload failed", filename: file.originalname };
+                    }
                 })
             );
+
+            // Filter out failed uploads
+            uploadedDocuments = uploadedDocuments.filter(doc => !doc.error);
         }
 
-        // Create Application instance
+        // Create new application
         const newApplication = new Application({
             title,
             description,
             data,
             documents: uploadedDocuments,
-            citizen,
-            gov,
-            govorg,
-            status: status || "Pending",
+            citizen: citizen_._id,
+            fullName,
+            mobile,
+            email,
+            applicationType,
+            status: 'Pending',
+            applicationAt: 'Taluka' // Default starting level
         });
 
-        // Save Application in database
+        // Save application
         const savedApplication = await newApplication.save();
-        res.status(201).json({ message: "Application created successfully!", application: savedApplication });
+
+        // Update citizen's applications (if you maintain this relationship)
+        await Citizen.findByIdAndUpdate(
+            citizen_._id,
+            { $push: { applications: savedApplication._id } },
+            { new: true }
+        );
+
+
+        return res.status(201).json({
+            message: "Application created successfully!",
+            application: savedApplication
+        });
+
     } catch (err) {
-        console.error("Error creating application:", err.message);
-        res.status(500).json({ message: "Error creating application", error: err.message });
+        console.error("Error creating application:", err);
+        return res.status(500).json({
+            message: "Error creating application",
+            error: err.message
+        });
     }
 };
+
 
 exports.getApplicationbyId = async(req,res) => {
     try {
@@ -128,42 +233,23 @@ exports.findAll = async (req, res) => {
     }
 };
 
-exports.getApplicationbyAdmin = async (req, res) => {
-    try {
-        const adminId = req.params.adminId;
-
-        if (!adminId) {
-            return res.status(400).json({ message: "Admin ID is required!" });
-        }
-
-        // Find admin and populate the applications
-        const admin = await Admin.findById(adminId).populate({
-            path: "applications",
-            populate: { path: "citizen gov govorg" } // Populating referenced fields
-        });
-
-        if (!admin) {
-            return res.status(404).json({ message: "Admin not found!" });
-        }
-
-        res.status(200).json({ applications: admin.applications });
-    } catch (error) {
-        console.error("Error fetching applications:", error.message);
-        res.status(500).json({ message: "Error fetching applications", error: error.message });
-    }
-};
-
-// Retrive application by citizen, govorg or gov
-
 exports.getApplicationbyCitizen = async (req, res) => {
     try {
-        const citizenId = req.params.citizenId;
+        const email = req.params.email;
 
-        if (!citizenId) {
+        if (!email) {
             return res.status(400).json({ message: "Citizen ID is required!" });
         }
 
-        const applications = await Application.find({ citizen: citizenId });
+        // Find the citizen by email
+        const citizen = await Citizen.findOne({ email });
+
+        if (!citizen) {
+            return res.status(404).json({ message: "Citizen not found!" });
+        }
+
+        // Find applications for that citizen using their ID (_id)
+        const applications = await Application.find({ citizen: citizen._id });
 
         res.status(200).json({ applications });
     } catch (error) {
@@ -171,37 +257,53 @@ exports.getApplicationbyCitizen = async (req, res) => {
         res.status(500).json({ message: "Error fetching applications", error: error.message });
     }
 }
+
 
 exports.getApplicationbyGov = async (req, res) => {
     try {
-        const govId = req.params.govId;
-
-        if (!govId) {
-            return res.status(400).json({ message: "Gov ID is required!" });
-        }
-
-        const applications = await Application.find({ gov: govId });
-
-        res.status(200).json({ applications });
+      let govId = req.params.name;
+  
+      if (!govId) {
+        return res.status(400).json({ message: "Gov ID is required!" });
+      }
+  
+      // Format govId (if needed)
+      govId = govId.charAt(0).toUpperCase() + govId.slice(1).toLowerCase();
+  
+      // Fetch applications
+      const applications = await Application.find({ applicationAt: govId });
+  
+      if (applications.length === 0) {
+        return res.status(404).json({ message: "No applications found for the given Gov ID." });
+      }
+  
+      res.status(200).json({ applications });
     } catch (error) {
-        console.error("Error fetching applications:", error.message);
-        res.status(500).json({ message: "Error fetching applications", error: error.message });
+      console.error("Error fetching applications:", error.message);
+      res.status(500).json({ message: "Error fetching applications", error: error.message });
     }
-}
+};
 
-exports.getApplicationbyGovorg = async (req, res) => {
+
+exports.updateLevel = async (req, res) => {
     try {
-        const govorgId = req.params.govorgId;
+        const { id } = req.params;  // Change applicationId to id
+        const { applicationAt } = req.body;
 
-        if (!govorgId) {
-            return res.status(400).json({ message: "Govorg ID is required!" });
+        if (!id || !applicationAt) {
+            return res.status(400).json({ message: "Application ID and Application At are required!" });
         }
 
-        const applications = await Application.find({ govorg: govorgId });
+        const updatedApplication = await Application.findByIdAndUpdate(id, { applicationAt }, { new: true });
 
-        res.status(200).json({ applications });
+        if (!updatedApplication) {
+            return res.status(404).json({ message: `Application with id ${id} not found!` });
+        }
+
+        res.json({ message: "Application level updated successfully!", application: updatedApplication });
+
     } catch (error) {
-        console.error("Error fetching applications:", error.message);
-        res.status(500).json({ message: "Error fetching applications", error: error.message });
+        console.error("Error updating application level:", error.message);
+        res.status(500).json({ message: "Error updating application level", error: error.message });
     }
-}
+};

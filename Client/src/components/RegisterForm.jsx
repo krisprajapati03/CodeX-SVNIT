@@ -5,7 +5,7 @@ const RegisterForm = ({ switchToLogin }) => {
   const [mobileNumber, setMobileNumber] = useState("");
   const [aadharNumber, setAadharNumber] = useState("");
   const [email, setEmail] = useState("");
-  const [address, setAddress] = useState("");  // New field for address
+  const [address, setAddress] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
@@ -24,19 +24,31 @@ const RegisterForm = ({ switchToLogin }) => {
       return;
     }
 
+    // Validate mobile number (10 digits)
+    if (!/^\d{10}$/.test(mobileNumber)) {
+      setError("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+
     // Validate email format
     if (!/^[\w-.]+@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(email)) {
       setError("Please enter a valid email.");
       return;
     }
 
+    // Validate password strength (at least 8 characters)
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      return;
+    }
+
     // Create user object for registration
     const user = {
-      fullName,
-      mobileNumber,
-      aadharNumber,
+      name: fullName,
+      phone: mobileNumber,
+      aadhar: aadharNumber,
       email,
-      address,  // Include address in the user object
+      address,
       password,
     };
 
@@ -52,13 +64,13 @@ const RegisterForm = ({ switchToLogin }) => {
       const data = await response.json();
 
       if (response.ok) {
-        alert("Registration successful!");
+        console.log("Registration successful:", data);
         switchToLogin(); // Switch to login form
       } else {
         setError(data.message || "Registration failed. Please try again.");
       }
     } catch (error) {
-      setError("An error occurred. Please try again.");
+      setError("Network error occurred. Please try again.");
     }
   };
 

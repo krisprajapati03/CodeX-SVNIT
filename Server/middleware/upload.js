@@ -1,24 +1,40 @@
-const multer = require("multer");
-const path = require("path");
+const multer = require('multer');
+const path = require('path');
 
-// Storage engine
 const storage = multer.diskStorage({
-    destination: "uploads/",
-    filename: (req, file, cb) => {
-        cb(null, file.fieldname + "-" + Date.now() + path.extname(file.originalname));
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/'); // Make sure this directory exists
+    },
+    filename: function (req, file, cb) {
+        cb(null, Date.now() + '-' + file.originalname);
     }
 });
 
-// File filter (optional)
 const fileFilter = (req, file, cb) => {
-    if (file.mimetype === "application/pdf" || file.mimetype.startsWith("image/")) {
+    // Accept images, pdfs, and common document formats
+    const allowedTypes = [
+        'image/jpeg',
+        'image/png',
+        'image/jpg',
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+
+    if (allowedTypes.includes(file.mimetype)) {
         cb(null, true);
     } else {
-        cb(new Error("Only images and PDFs are allowed!"), false);
+        cb(new Error('Invalid file type. Only images and documents are allowed.'), false);
     }
 };
 
-// Multer upload middleware
-const upload = multer({ storage, fileFilter });
+const upload = multer({
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB limit
+        files: 5 // Maximum 5 files
+    }
+});
 
 module.exports = upload;

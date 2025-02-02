@@ -86,7 +86,7 @@ exports.create = async (req, res) => {
                 success: true,
                 message: "Citizen created successfully",
                 data: {
-                    data: data._doc.email, // Remove password from response
+                    data: data.data.email, // Remove password from response
                     password: undefined // Remove password from response
                 }
             });
@@ -97,11 +97,5 @@ exports.create = async (req, res) => {
             error: error.message
         });
     }
-};
-
-// Retrieve all Citizens from the database.
-exports.findAll = (req, res) => {
-    const data = Citizen.getAll()
-    res.send(data);
 };
 

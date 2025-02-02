@@ -1,20 +1,28 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const router = require('./routes/v1.router');
-require('dotenv').config();
-const cors = require('cors');
+const bodyParser = require('body-parser');
+require('dotenv').config();  // For using environment variables
+const cors = require('cors')
 
 const app = express();
 
-app.use(cors({
-    origin: "*"
-}));
 
-// Middleware for parsing request bodies (for JSON only)
+
+app.use(cors({
+    origin: '*', // Allow requests from any origin
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}))
+
+
+// Middleware for parsing request bodies
 app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
 
 // Routes
-app.use('/api/v1', router);
+app.use('/api/v1', router);  // Prefixed with '/api/v1' for versioning
 
 // Catch-all route for unmatched routes
 app.get('*', (req, res) => {
@@ -23,10 +31,7 @@ app.get('*', (req, res) => {
 
 // MongoDB Connection
 mongoose
-    .connect('mongodb://localhost:27017/CodeX-SVNIT', {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    })
+    .connect('mongodb://localhost:27017/CodeX-SVNIT')
     .then(() => console.log('✅ MongoDB connected successfully'))
     .catch((err) => console.error('❌ MongoDB connection error:', err));
 

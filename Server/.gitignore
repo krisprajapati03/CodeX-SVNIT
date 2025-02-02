@@ -1,5 +1,61 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-error.log
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
+# Environment variables
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Build and output directories
+/build
+/dist
+/public
+/.next
+/out
+
+# Logs and debug files
+logs/
+*.log
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+debug.log*
+coverage/
+
+# Editor/IDE specific files
+.vscode/
+.idea/
+*.sublime-workspace
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Firebase specific
+firebase-debug.log
+.firebase/
+.firestore/
+
+# Blockchain-related files (Pinata, IPFS)
+.ipfs/
+.pinata/
+.wallet/
+.secret/
+
+# Ignore sensitive keys and configurations
+config.js
+firebase-config.json
+blockchain-config.json
+
+# Ignore local database files
+/data/
+*.sqlite
+*.db
+
+# Ignore miscellaneous
+*.bak
+*.swp

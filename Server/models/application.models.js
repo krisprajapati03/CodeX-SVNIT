@@ -10,8 +10,8 @@ const applicationSchema = new mongoose.Schema({
         required: true
     },
     data: {
-        type: Map,
-        of: mongoose.Schema.Types.Mixed
+        type: String,
+        required: true
     },
     documents: [
         {   
@@ -33,13 +33,21 @@ const applicationSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Citizen'
     },
-    gov: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Gov'
+    fullName: {
+        type: String,
+        required: true
     },
-    govorg: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Govorg'
+    mobile: {
+        type: String,
+        required: true
+    },
+    email: {
+        type: String,
+        required: true
+    },
+    applicationType: {
+        type: String,
+        required: true
     },
     status: {
         type: String,
@@ -47,8 +55,8 @@ const applicationSchema = new mongoose.Schema({
         required: true
     },
     applicationAt: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Admin'
+        type: String,
+        enum: ['Taluka', 'District', 'State'],
     }
 }, {timestamps: true});
 
